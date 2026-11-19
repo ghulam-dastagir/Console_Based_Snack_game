@@ -55,3 +55,39 @@ typedef struct {
     int score, level, eaten, speed;
     Point food, bonus;
     int bonus_time;          /* moves left for bonus food, 0 = no bonus */
+
+    // day 3
+        Point obs[MAX_OBS];
+    int obs_count;
+} Game;
+
+Snake s;
+Game g;
+
+/* ---------- File handling ---------- */
+int load_high(char *name)
+{
+    int sc = 0;
+    FILE *f = fopen(FILE_NAME, "r");
+    strcpy(name, "---");
+
+    if (f != NULL) {
+        if (fscanf(f, "%15s %d", name, &sc) != 2) {
+            strcpy(name, "---");
+            sc = 0;
+        }
+        fclose(f);
+    }
+
+    return sc;
+}
+
+void save_high(char *name, int sc)
+{
+    FILE *f = fopen(FILE_NAME, "w");
+
+    if (f != NULL) {
+        fprintf(f, "%s %d\n", name, sc);
+        fclose(f);
+    }
+}
