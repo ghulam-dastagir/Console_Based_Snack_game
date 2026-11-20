@@ -91,3 +91,31 @@ void save_high(char *name, int sc)
         fclose(f);
     }
 }
+// day 4 
+/* ---------- Helper functions ---------- */
+int same(Point a, Point b)
+{
+    return a.x == b.x && a.y == b.y;
+}
+
+/* is cell (x,y) empty? */
+int is_free(Point p)
+{
+    int i;
+
+    for (i = 0; i < s.length; i++)
+        if (same(s.body[i], p))
+            return 0;
+
+    for (i = 0; i < g.obs_count; i++)
+        if (same(g.obs[i], p))
+            return 0;
+
+    if (same(g.food, p))
+        return 0;
+
+    if (g.bonus_time > 0 && same(g.bonus, p))
+        return 0;
+
+    return 1;
+}
