@@ -119,3 +119,34 @@ int is_free(Point p)
 
     return 1;
 }
+
+day 5
+
+/* put p on a random empty cell. keep_away = 1 keeps it away from the snake head */
+void random_cell(Point *p, int keep_away)
+{
+    Point t;
+    int tries;
+
+    for (tries = 0; tries < 2000; tries++) {
+        t.x = rand() % W;
+        t.y = rand() % H;
+
+        if (!is_free(t))
+            continue;
+
+        if (keep_away &&
+            abs(t.x - s.body[0].x) + abs(t.y - s.body[0].y) < 6)
+            continue;
+
+        *p = t;
+        return;
+    }
+}
+
+void setup(char *name)
+{
+    memset(&g, 0, sizeof(g));
+    strcpy(g.name, name);
+    g.level = 1;
+    g.speed = 150;
