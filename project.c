@@ -174,3 +174,36 @@ void draw(int high)
         grid[g.obs[i].y][g.obs[i].x] = 'X';
 
     grid[g.food.y][g.food.x] = 'F';
+
+    // day 7 
+
+        if (g.bonus_time > 0)
+        grid[g.bonus.y][g.bonus.x] = 'B';
+
+    for (i = s.length - 1; i > 0; i--)
+        grid[s.body[i].y][s.body[i].x] = 'o';
+
+    grid[s.body[0].y][s.body[0].x] = '@';
+
+    p += sprintf(p, "Player:%s   Score:%d   High:%d   Level:%d   Speed:%dms\n",
+                 g.name, g.score, high, g.level, g.speed);
+
+    for (x = 0; x < W + 2; x++)
+        *p++ = '#';
+
+    *p++ = '\n';
+
+    for (y = 0; y < H; y++) {
+        *p++ = '#';
+
+        for (x = 0; x < W; x++)
+            *p++ = grid[y][x];
+
+        *p++ = '#';
+        *p++ = '\n';
+    }
+
+    for (x = 0; x < W + 2; x++)
+        *p++ = '#';
+
+    *p++ = '\n';
