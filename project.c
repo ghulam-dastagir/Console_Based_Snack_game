@@ -118,10 +118,8 @@ int is_free(Point p)
         return 0;
 
     return 1;
-}
-
-day 5
-
+} 
+// day 5 
 /* put p on a random empty cell. keep_away = 1 keeps it away from the snake head */
 void random_cell(Point *p, int keep_away)
 {
@@ -150,3 +148,29 @@ void setup(char *name)
     strcpy(g.name, name);
     g.level = 1;
     g.speed = 150;
+
+    // day 6
+
+        s.length = 1;
+    s.body[0].x = W / 2;
+    s.body[0].y = H / 2;
+    s.dir = s.last = 0;
+    g.food.x = g.food.y = -1;
+    random_cell(&g.food, 0);
+}
+
+/* ---------- Drawing ---------- */
+void draw(int high)
+{
+    static char out[4000];          /* whole screen is built here, printed once */
+    char grid[H][W], *p = out;
+    int i, x, y;
+
+    for (y = 0; y < H; y++)
+        for (x = 0; x < W; x++)
+            grid[y][x] = ' ';
+
+    for (i = 0; i < g.obs_count; i++)
+        grid[g.obs[i].y][g.obs[i].x] = 'X';
+
+    grid[g.food.y][g.food.x] = 'F';
