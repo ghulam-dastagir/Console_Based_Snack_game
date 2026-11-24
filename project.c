@@ -207,3 +207,32 @@ void draw(int high)
         *p++ = '#';
 
     *p++ = '\n';
+
+    // day 8
+
+        if (g.bonus_time > 0)
+        p += sprintf(p, "BONUS (%d moves)\n", g.bonus_time);
+
+    *p = '\0';
+
+    clear_screen();
+    cursor_home();
+    printf("%s", out);
+}
+
+/* ---------- Snake movement ---------- */
+int move_snake(void)
+{
+    Point next = s.body[0];
+    int i;
+
+    switch (s.dir) {
+        case 'w': next.y--; break;
+        case 's': next.y++; break;
+        case 'a': next.x--; break;
+        case 'd': next.x++; break;
+        default: return 1;
+    }
+
+    if (next.x < 0 || next.x >= W || next.y < 0 || next.y >= H)
+        return 0;
