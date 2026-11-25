@@ -30,7 +30,7 @@ void set_cursor(int show) { printf(show ? "\033[?25h" : "\033[?25l"); fflush(std
 // DAY 2
 
 void raw_on() { tcgetattr(0, &old_t); struct termios t = old_t; t.c_lflag &= ~(ECHO | ICANON); tcsetattr(0, TCSANOW, &t); }
-void raw_off() { tcsetattr(0, &old_t); }
+void raw_off() { tcsetattr(0, TCSANOW, &old_t); }
 int _kbhit() { struct timeval tv = {0, 0}; fd_set f; FD_ZERO(&f); FD_SET(0, &f); return select(1, &f, NULL, NULL, &tv) > 0; }
 int _getch() { return getchar(); }
 #endif
@@ -218,28 +218,26 @@ void draw(int high)
     clear_screen();
     cursor_home();
     printf("%s", out);
-}
+} 
 
 /* ---------- Snake movement ---------- */
 int move_snake(void)
 {
-    Point next = s.body[0];
-    int i;
+    Point n = s.body[0];
+    int i, ate, bon, grow, limit;
 
-    switch (s.dir) {
-        case 'w': next.y--; break;
-        case 's': next.y++; break;
-        case 'a': next.x--; break;
-        case 'd': next.x++; break;
-        default: return 1;
-    }
+    if (s.dir == 0) return 0;
+    if (s.dir == 'w') n.y--;
+    if (s.dir == 's') n.y++;
+    if (s.dir == 'a') n.x--;
+    if (s.dir == 'd') n.x++;
+    s.last = s.dir;
 
-    if (next.x < 0 || next.x >= W || next.y < 0 || next.y >= H)
-        return 0;
+    if (n.x < 0 || n.x >= W || n.y < 0 || n.y >= H)
+        return 1;
 
     // day 9
-    
-        for (i = 0; i < g.obs_count; i++) if (same(g.obs[i], n)) return 3;
+    for (i = 0; i < g.obs_count; i++) if (same(g.obs[i], n)) return 3;
 
     ate  = same(n, g.food);
     bon  = g.bonus_time > 0 && same(n, g.bonus);
@@ -290,7 +288,7 @@ int read_keys()
         if (k == 'd' && s.last != 'a') s.dir = 'd';
     }
     return 0;
-} 
+}
 // day 10
 
 void play()
