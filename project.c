@@ -25,10 +25,6 @@ struct termios old_t;
 #define clear_screen() printf("\033[2J\033[H")
 #define cursor_home() printf("\033[H")
 void set_cursor(int show) { printf(show ? "\033[?25h" : "\033[?25l"); fflush(stdout); }
-
-  
-// DAY 2
-
 void raw_on() { tcgetattr(0, &old_t); struct termios t = old_t; t.c_lflag &= ~(ECHO | ICANON); tcsetattr(0, TCSANOW, &t); }
 void raw_off() { tcsetattr(0, TCSANOW, &old_t); }
 int _kbhit() { struct timeval tv = {0, 0}; fd_set f; FD_ZERO(&f); FD_SET(0, &f); return select(1, &f, NULL, NULL, &tv) > 0; }
@@ -55,9 +51,7 @@ typedef struct {
     int score, level, eaten, speed;
     Point food, bonus;
     int bonus_time;          /* moves left for bonus food, 0 = no bonus */
-
-    // day 3
-        Point obs[MAX_OBS];
+    Point obs[MAX_OBS];
     int obs_count;
 } Game;
 
@@ -70,73 +64,43 @@ int load_high(char *name)
     int sc = 0;
     FILE *f = fopen(FILE_NAME, "r");
     strcpy(name, "---");
-
     if (f != NULL) {
-        if (fscanf(f, "%15s %d", name, &sc) != 2) {
-            strcpy(name, "---");
-            sc = 0;
-        }
+        if (fscanf(f, "%15s %d", name, &sc) != 2) { strcpy(name, "---"); sc = 0; }
         fclose(f);
     }
-
     return sc;
 }
 
 void save_high(char *name, int sc)
 {
     FILE *f = fopen(FILE_NAME, "w");
+    if (f != NULL) { fprintf(f, "%s %d\n", name, sc); fclose(f); }
+}
 
-    if (f != NULL) {
-        fprintf(f, "%s %d\n", name, sc);
-        fclose(f);
-    }
-}
-// day 4 
 /* ---------- Helper functions ---------- */
-int same(Point a, Point b)
-{
-    return a.x == b.x && a.y == b.y;
-}
+int same(Point a, Point b) { return a.x == b.x && a.y == b.y; }
 
 /* is cell (x,y) empty? */
 int is_free(Point p)
 {
     int i;
-
-    for (i = 0; i < s.length; i++)
-        if (same(s.body[i], p))
-            return 0;
-
-    for (i = 0; i < g.obs_count; i++)
-        if (same(g.obs[i], p))
-            return 0;
-
-    if (same(g.food, p))
-        return 0;
-
-    if (g.bonus_time > 0 && same(g.bonus, p))
-        return 0;
-
+    for (i = 0; i < s.length; i++)  if (same(s.body[i], p)) return 0;
+    for (i = 0; i < g.obs_count; i++) if (same(g.obs[i], p)) return 0;
+    if (same(g.food, p)) return 0;
+    if (g.bonus_time > 0 && same(g.bonus, p)) return 0;
     return 1;
-} 
-// day 5 
+}
+
 /* put p on a random empty cell. keep_away = 1 keeps it away from the snake head */
 void random_cell(Point *p, int keep_away)
 {
     Point t;
     int tries;
-
     for (tries = 0; tries < 2000; tries++) {
         t.x = rand() % W;
         t.y = rand() % H;
-
-        if (!is_free(t))
-            continue;
-
-        if (keep_away &&
-            abs(t.x - s.body[0].x) + abs(t.y - s.body[0].y) < 6)
-            continue;
-
+        if (!is_free(t)) continue;
+        if (keep_away && abs(t.x - s.body[0].x) + abs(t.y - s.body[0].y) < 6) continue;
         *p = t;
         return;
     }
@@ -148,10 +112,7 @@ void setup(char *name)
     strcpy(g.name, name);
     g.level = 1;
     g.speed = 150;
-
-    // day 6
-
-        s.length = 1;
+    s.length = 1;
     s.body[0].x = W / 2;
     s.body[0].y = H / 2;
     s.dir = s.last = 0;
@@ -167,61 +128,34 @@ void draw(int high)
     int i, x, y;
 
     for (y = 0; y < H; y++)
-        for (x = 0; x < W; x++)
-            grid[y][x] = ' ';
-
-    for (i = 0; i < g.obs_count; i++)
-        grid[g.obs[i].y][g.obs[i].x] = 'X';
-
+        for (x = 0; x < W; x++) grid[y][x] = ' ';
+    for (i = 0; i < g.obs_count; i++) grid[g.obs[i].y][g.obs[i].x] = 'X';
     grid[g.food.y][g.food.x] = 'F';
+    if (g.bonus_time > 0) grid[g.bonus.y][g.bonus.x] = '$';
+    for (i = s.length - 1; i >= 0; i--) grid[s.body[i].y][s.body[i].x] = (i == 0) ? 'O' : 'o';
 
-    // day 7 
-
-        if (g.bonus_time > 0)
-        grid[g.bonus.y][g.bonus.x] = 'B';
-
-    for (i = s.length - 1; i > 0; i--)
-        grid[s.body[i].y][s.body[i].x] = 'o';
-
-    grid[s.body[0].y][s.body[0].x] = '@';
-
-    p += sprintf(p, "Player:%s   Score:%d   High:%d   Level:%d   Speed:%dms\n",
-                 g.name, g.score, high, g.level, g.speed);
-
-    for (x = 0; x < W + 2; x++)
-        *p++ = '#';
-
+    p += sprintf(p, "  Player: %-15s Level: %-2d Score: %-5d High: %-5d\n", g.name, g.level, g.score, high);
+    for (x = 0; x < W + 2; x++) *p++ = '#';
     *p++ = '\n';
-
     for (y = 0; y < H; y++) {
         *p++ = '#';
-
-        for (x = 0; x < W; x++)
-            *p++ = grid[y][x];
-
+        for (x = 0; x < W; x++) *p++ = grid[y][x];
         *p++ = '#';
         *p++ = '\n';
     }
+    for (x = 0; x < W + 2; x++) *p++ = '#';
+    if (g.bonus_time > 0) p += sprintf(p, "\n  Bonus $ vanishes in %2d moves!      \n", g.bonus_time);
+    else                  p += sprintf(p, "\n  W A S D = move, X = quit            \n");
 
-    for (x = 0; x < W + 2; x++)
-        *p++ = '#';
-
-    *p++ = '\n';
-
-    // day 8
-
-        if (g.bonus_time > 0)
-        p += sprintf(p, "BONUS (%d moves)\n", g.bonus_time);
-
-    *p = '\0';
-
-    clear_screen();
     cursor_home();
-    printf("%s", out);
-} 
+    fputs(out, stdout);
+    fflush(stdout);
+}
 
-/* ---------- Snake movement ---------- */
-int move_snake(void)
+/* ---------- Game logic ---------- */
+
+/* move snake one step. returns 0 = alive, 1 = wall, 2 = own body, 3 = obstacle */
+int move_snake()
 {
     Point n = s.body[0];
     int i, ate, bon, grow, limit;
@@ -233,10 +167,7 @@ int move_snake(void)
     if (s.dir == 'd') n.x++;
     s.last = s.dir;
 
-    if (n.x < 0 || n.x >= W || n.y < 0 || n.y >= H)
-        return 1;
-
-    // day 9
+    if (n.x < 0 || n.x >= W || n.y < 0 || n.y >= H) return 1;
     for (i = 0; i < g.obs_count; i++) if (same(g.obs[i], n)) return 3;
 
     ate  = same(n, g.food);
@@ -257,16 +188,16 @@ int move_snake(void)
         g.score += 10;
         g.eaten++;
         random_cell(&g.food, 0);
-        if (g.eaten % 5 == 0) {
+        if (g.eaten % 5 == 0) {                          /* new level */
             g.level++;
             for (i = 0; i < 3 && g.obs_count < MAX_OBS; i++)
                 random_cell(&g.obs[g.obs_count++], 1);
         }
-        if (g.eaten % 4 == 0 && g.bonus_time == 0) {
+        if (g.eaten % 4 == 0 && g.bonus_time == 0) {     /* bonus food */
             random_cell(&g.bonus, 0);
             g.bonus_time = 50;
         }
-        g.speed = 150 - g.eaten * 3 - (g.level - 1) * 5;
+        g.speed = 150 - g.eaten * 3 - (g.level - 1) * 5; /* faster */
         if (g.speed < 50) g.speed = 50;
     }
     return 0;
@@ -277,9 +208,9 @@ int read_keys()
 {
     while (_kbhit()) {
         int k = _getch();
-        if (k >= 'A' && k <= 'Z') k += 32;
+        if (k >= 'A' && k <= 'Z') k += 32;               /* to lower case */
 #ifndef _WIN32
-        if (k == 27) { _getch(); _getch(); continue; }
+        if (k == 27) { _getch(); _getch(); continue; }   /* ignore arrow keys */
 #endif
         if (k == 'x') return 1;
         if (k == 'w' && s.last != 's') s.dir = 'w';
@@ -289,7 +220,6 @@ int read_keys()
     }
     return 0;
 }
-// day 10
 
 void play()
 {
@@ -304,19 +234,18 @@ void play()
     setup(name);
     clear_screen();
     raw_on();
-    set_cursor(0);
+    set_cursor(0);                  /* hide blinking cursor */
 
     while (!quit && status == 0) {
         draw(high > g.score ? high : g.score);
         delay = g.speed;
-        if (s.dir == 'w' || s.dir == 's') delay = delay * 3 / 2;
+        if (s.dir == 'w' || s.dir == 's') delay = delay * 3 / 2;  /* up/down look faster */
         for (t = 0; t < delay && !quit; t += 10) {
             sleep_ms(10);
             quit = read_keys();
         }
         if (!quit) status = move_snake();
     }
-
     raw_off();
     set_cursor(1);
 
@@ -325,16 +254,9 @@ void play()
     if (status == 1) printf("  You hit the wall!\n");
     if (status == 2) printf("  You hit your own body!\n");
     if (status == 3) printf("  You hit an obstacle!\n");
-
     printf("\n  Player: %s\n  Score : %d\n  Level : %d\n", g.name, g.score, g.level);
-
-    if (g.score > high) {
-        printf("\n  *** NEW HIGH SCORE! ***\n");
-        save_high(g.name, g.score);
-    } else {
-        printf("\n  High score: %d (%s)\n", high, oldname);
-    }
-
+    if (g.score > high) { printf("\n  *** NEW HIGH SCORE! ***\n"); save_high(g.name, g.score); }
+    else                  printf("\n  High score: %d (%s)\n", high, oldname);
     printf("\n  Press Enter to go back...");
     fgets(line, sizeof(line), stdin);
 }
@@ -343,15 +265,10 @@ void show_high()
 {
     char name[16], line[50];
     int sc = load_high(name);
-
     clear_screen();
     printf("\n  ===== HIGH SCORE =====\n\n");
-
-    if (sc == 0)
-        printf("  No high score yet.\n");
-    else
-        printf("  %s - %d points\n", name, sc);
-
+    if (sc == 0) printf("  No high score yet.\n");
+    else         printf("  %s - %d points\n", name, sc);
     printf("\n  Press Enter to go back...");
     fgets(line, sizeof(line), stdin);
 }
@@ -362,32 +279,14 @@ int main()
     int choice = 0;
 
     srand((unsigned)time(NULL));
-
     while (choice != 3) {
         clear_screen();
-
         printf("\n  ==== CONSOLE SNAKE GAME ====\n\n");
-        printf("  1. Play Game\n");
-        printf("  2. High Score\n");
-        printf("  3. Exit\n\n");
-        printf("  Choose: ");
-
-        if (!fgets(line, sizeof(line), stdin))
-            break;
-
+        printf("  1. Play Game\n  2. High Score\n  3. Exit\n\n  Choose: ");
+        if (!fgets(line, sizeof(line), stdin)) break;
         choice = atoi(line);
-
-        if (choice == 1)
-            play();
-
-        if (choice == 2)
-            show_high();
+        if (choice == 1) play();
+        if (choice == 2) show_high();
     }
-
     return 0;
 }
-
-
-    
-
-    
