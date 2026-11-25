@@ -236,3 +236,160 @@ int move_snake(void)
 
     if (next.x < 0 || next.x >= W || next.y < 0 || next.y >= H)
         return 0;
+
+    // day 9
+    
+        for (i = 0; i < g.obs_count; i++) if (same(g.obs[i], n)) return 3;
+
+    ate  = same(n, g.food);
+    bon  = g.bonus_time > 0 && same(n, g.bonus);
+    grow = (ate || bon) && s.length < W * H;
+
+    limit = grow ? s.length : s.length - 1;     /* tail cell moves away */
+    for (i = 0; i < limit; i++) if (same(s.body[i], n)) return 2;
+
+    if (grow) s.length++;
+    for (i = s.length - 1; i > 0; i--) s.body[i] = s.body[i - 1];
+    s.body[0] = n;
+
+    if (g.bonus_time > 0) g.bonus_time--;
+    if (bon) { g.score += 30; g.bonus_time = 0; }
+
+    if (ate) {
+        g.score += 10;
+        g.eaten++;
+        random_cell(&g.food, 0);
+        if (g.eaten % 5 == 0) {
+            g.level++;
+            for (i = 0; i < 3 && g.obs_count < MAX_OBS; i++)
+                random_cell(&g.obs[g.obs_count++], 1);
+        }
+        if (g.eaten % 4 == 0 && g.bonus_time == 0) {
+            random_cell(&g.bonus, 0);
+            g.bonus_time = 50;
+        }
+        g.speed = 150 - g.eaten * 3 - (g.level - 1) * 5;
+        if (g.speed < 50) g.speed = 50;
+    }
+    return 0;
+}
+
+/* read keys while waiting. returns 1 if player pressed X */
+int read_keys()
+{
+    while (_kbhit()) {
+        int k = _getch();
+        if (k >= 'A' && k <= 'Z') k += 32;
+#ifndef _WIN32
+        if (k == 27) { _getch(); _getch(); continue; }
+#endif
+        if (k == 'x') return 1;
+        if (k == 'w' && s.last != 's') s.dir = 'w';
+        if (k == 's' && s.last != 'w') s.dir = 's';
+        if (k == 'a' && s.last != 'd') s.dir = 'a';
+        if (k == 'd' && s.last != 'a') s.dir = 'd';
+    }
+    return 0;
+} 
+// day 10
+
+void play()
+{
+    char name[16] = "Player", line[50], oldname[16];
+    int status = 0, quit = 0, t, delay, high;
+
+    clear_screen();
+    printf("\n  Enter your name: ");
+    if (fgets(line, sizeof(line), stdin)) sscanf(line, "%15s", name);
+
+    high = load_high(oldname);
+    setup(name);
+    clear_screen();
+    raw_on();
+    set_cursor(0);
+
+    while (!quit && status == 0) {
+        draw(high > g.score ? high : g.score);
+        delay = g.speed;
+        if (s.dir == 'w' || s.dir == 's') delay = delay * 3 / 2;
+        for (t = 0; t < delay && !quit; t += 10) {
+            sleep_ms(10);
+            quit = read_keys();
+        }
+        if (!quit) status = move_snake();
+    }
+
+    raw_off();
+    set_cursor(1);
+
+    clear_screen();
+    printf("\n  ===== GAME OVER =====\n\n");
+    if (status == 1) printf("  You hit the wall!\n");
+    if (status == 2) printf("  You hit your own body!\n");
+    if (status == 3) printf("  You hit an obstacle!\n");
+
+    printf("\n  Player: %s\n  Score : %d\n  Level : %d\n", g.name, g.score, g.level);
+
+    if (g.score > high) {
+        printf("\n  *** NEW HIGH SCORE! ***\n");
+        save_high(g.name, g.score);
+    } else {
+        printf("\n  High score: %d (%s)\n", high, oldname);
+    }
+
+    printf("\n  Press Enter to go back...");
+    fgets(line, sizeof(line), stdin);
+}
+
+void show_high()
+{
+    char name[16], line[50];
+    int sc = load_high(name);
+
+    clear_screen();
+    printf("\n  ===== HIGH SCORE =====\n\n");
+
+    if (sc == 0)
+        printf("  No high score yet.\n");
+    else
+        printf("  %s - %d points\n", name, sc);
+
+    printf("\n  Press Enter to go back...");
+    fgets(line, sizeof(line), stdin);
+}
+
+int main()
+{
+    char line[50];
+    int choice = 0;
+
+    srand((unsigned)time(NULL));
+
+    while (choice != 3) {
+        clear_screen();
+
+        printf("\n  ==== CONSOLE SNAKE GAME ====\n\n");
+        printf("  1. Play Game\n");
+        printf("  2. High Score\n");
+        printf("  3. Exit\n\n");
+        printf("  Choose: ");
+
+        if (!fgets(line, sizeof(line), stdin))
+            break;
+
+        choice = atoi(line);
+
+        if (choice == 1)
+            play();
+
+        if (choice == 2)
+            show_high();
+    }
+
+    return 0;
+}
+
+
+    
+
+    
